@@ -120,6 +120,12 @@ Amount must be greater than zero
 ## Currency
 - Currency is required.
 - Currency cannot be empty.
+The application supports the following currencies:
+
+- INR
+- USD
+- EUR
+
 Example:
 
 ```
@@ -130,21 +136,98 @@ Output:
 ```
 Currency is required
 ```
+### 1. INR Currency
+
+Example command:
+
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T301\",\"customerId\":\"C301\",\"amount\":1000,\"currency\":\"INR\",\"transactionType\":\"PAYMENT\"}"
+```
+The transaction will initially have:
+
+```
+Currency: INR
+Status: PENDING
+Transaction Type: PAYMENT
+```
+2. USD Currency
+
+Example command:
+
+
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T302\",\"customerId\":\"C302\",\"amount\":1000,\"currency\":\"USD\",\"transactionType\":\"PAYMENT\"}"
+```
+The transaction will initially have:
+
+```
+Currency: USD
+Status: PENDING
+Transaction Type: PAYMENT
+```
+3. EUR Currency
+
+Example command:
+
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T303\",\"customerId\":\"C303\",\"amount\":1000,\"currency\":\"EUR\",\"transactionType\":\"PAYMENT\"}"
+```
+The transaction will initially have:
+
+```
+Currency: EUR
+Status: PENDING
+Transaction Type: PAYMENT
+```
 
 ## Transaction Type
-- Transaction type is required.
-- Transaction type cannot be empty.
-Example:
+
+The transaction type is required and cannot be empty.
+
+The application supports the following transaction types:
+
+- PAYMENT
+- REFUND
+- TRANSFER
+
+### 1. Payment Transaction
+
+Example command:
 
 ```
-curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T117\",\"customerId\":\"C201\",\"amount\":1000,\"currency\":\"USD\",\"transactionType\":\"\"}"
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T201\",\"customerId\":\"C201\",\"amount\":1000,\"currency\":\"USD\",\"transactionType\":\"PAYMENT\"}"
 ```
-Output:
+The transaction will initially have:
 
 ```
-Transaction type is required
+Status: PENDING
+Transaction Type: PAYMENT
 ```
+## 2. Refund Transaction
+Example Command:
 
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T115\",\"customerId\":\"C202\",\"amount\":500,\"currency\":\"USD\",\"transactionType\":\"REFUND\"}"
+```
+The transaction will initially have:
+
+```
+Status: PENDING
+Transaction Type: REFUND
+```
+## 3. Transfer Transaction
+Example Command:
+
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T113\",\"customerId\":\"C203\",\"amount\":2000,\"currency\":\"USD\",\"transactionType\":\"TRANSFER\"}"
+```
+The transaction will initially have:
+
+```
+Status: PENDING
+Transaction Type: TRANSFER
+
+```
 ## Initial Transaction Status
 
 The client does not provide the initial status while creating a transaction.
@@ -316,6 +399,56 @@ is not allowed.
 
 These validations help prevent invalid transaction data from being stored.
 ## 8. Testing
+### How to Run the Application
+
+To run the application in Eclipse:
+
+The application can be tested in the following order:
+
+#### 1. Start the Application
+
+To start the Spring Boot application in Eclipse:
+
+1. Right-click `TransactionStarterApplication.java`.
+2. Select **Run As → Java Application**.
+3. Wait until the console shows that the Spring Boot application has started on port `8081`.
+
+#### 2. Test the APIs Using Command Prompt
+
+After the application starts, open Command Prompt and run the curl commands provided in the **Manual API Testing** section.
+
+These commands can be used to create, retrieve, and update transactions and to check the validation and error cases.
+
+#### 3. Check the Data in H2 Database
+
+The transaction data can also be viewed in the H2 database using the H2 Console.
+
+Open the H2 Console using:
+
+`http://localhost:8081/h2-console`
+
+After connecting to the database, the stored transaction data can be checked using:
+
+```
+SELECT * FROM TRANSACTION;
+```
+
+Running this query displays the transaction records stored in the database.
+
+4. Run JUnit Tests
+
+After testing the APIs manually and checking the database, the automated tests can be run in Eclipse.
+
+Right-click TransactionStarterApplicationTests.java.
+Select Run As → JUnit Test.
+Check the JUnit results in Eclipse.
+
+5.To execute project
+
+-Right click on the project
+-select run as → Maven test
+- output will show build success
+
 
 The project includes JUnit tests covering the main operations and important validation cases.
 
