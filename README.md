@@ -1,53 +1,12 @@
-# Transaction Starter Project
+# Customer Transaction Management API
 
-This is the starter project for the Customer Transactions exercise.
+## 1. Problem Understanding
 
-## Before you start
+This project is a Spring Boot REST API for managing customer transactions. It allows users to create transactions, retrieve transactions, update transaction status, and retrieve all transactions for a customer.
 
-The first thing you should do after cloning the repository is:
+The main purpose of the application is to create and manage customer transactions.
 
-### Linux / macOS
-
-```bash
-./mvnw clean test
-```
-
-### Windows
-
-```bat
-mvnw.cmd clean test
-```
-
-The sample test should pass before you begin implementing the exercise.
-
-## What is already provided
-
-- Java 17
-- Spring Boot
-- Maven wrapper
-- Spring Web
-- Spring Data JPA
-- H2 embedded database
-- JUnit / Spring Boot Test
-- A sample REST endpoint: `GET /api/sample`
-- A sample test that loads the Spring context
-
-
-## Exercise
-
-Implement these four operations:
-
-1. Create transaction
-2. Get transaction
-3. Update transaction status
-4. Get all transactions for a customer
-
-
-You may change the surrounding design if you believe your solution is better.
-
-## Transaction fields
-
-Every transaction contains:
+Each transaction contains:
 
 - Transaction ID
 - Customer ID
@@ -56,101 +15,261 @@ Every transaction contains:
 - Transaction Type
 - Transaction Status
 
-### Validation rules
+I implemented the four operations mentioned in the assignment:
 
-Define what makes a transaction valid. At minimum, consider:
+1. Create a transaction
+2. Get a transaction using Transaction ID
+3. Update the status of a transaction
+4. Get all transactions for a customer
 
-- Transaction ID
-- Customer ID
-- Amount
-- Currency
-- Transaction type
-- Initial status
+I focused on keeping the implementation simple and easy to understand while covering the requirements given in the assignment.
 
 
+## 2. Technology Used
 
+The project uses the following technologies:
 
-The following validation rules are used when creating a transaction:
+- Java 17
+- Spring Boot
+- Maven
+- Spring Web
+- Spring Data JPA
+- H2 Embedded Database
+- JUnit
+- Spring Boot Test
 
-- Transaction ID is required and cannot be empty.
-- Customer ID is required and cannot be empty.
-- Amount is required and must be greater than zero.
-- Currency is required and cannot be empty.
-- Transaction type is required and cannot be empty.
+## 3. Application Design
+
+The application follows a simple layered design.
+
+```text
+Controller
+    |
+    v
+Service
+    |
+    v
+Repository
+    |
+    v
+H2 Database
+
+```
+## Controller
+
+The controller handles the REST API requests.
+
+It receives requests from the client and passes the required information to the service layer.
+## Service
+
+The service layer contains the main business logic.
+
+It is responsible for:
+
+- Creating transactions
+- Validating transaction details
+- Checking duplicate transaction IDs
+- Getting transactions
+- Updating transaction status
+- Getting all transactions for a customer
+
+## Repository
+
+The repository is responsible for database operations.
+
+Spring Data JPA is used to communicate with the H2 database.
+## 4. Transaction Validation
+
+The following validation rules are used when creating a transaction.
+Transaction ID
+- Transaction ID is required.
+- Transaction ID cannot be empty.
 - Transaction ID must be unique.
 
-When a transaction is successfully created, its initial status is set to `PENDING`.
+If a transaction with the same ID already exists, the request is rejected.
 
-### Status transition rules
+Example error:
+```
+Transaction ID already exists
+```
+## Customer ID
+- Customer ID is required.
+- Customer ID cannot be empty.
 
-- PENDING → PROCESSING
-- PROCESSING → COMPLETED
-- PROCESSING → FAILED
+## Amount
+- Amount is required.
+- Amount must be greater than zero.
+- Zero and negative amounts are rejected.
 
+Example error:
+```
+Amount must be greater than zero
+```
+## Currency
+- Currency is required.
+- Currency cannot be empty.
+## Transaction Type
+- Transaction type is required.
+- Transaction type cannot be empty.
+
+## Initial Transaction Status
+
+The client does not provide the initial status while creating a transaction.
+
+When a transaction is successfully created, its initial status is automatically set to:
+```
+PENDING
+```
+This is handled by the application.
+
+## 5. Transaction Status Rules
+
+The transaction status can only be changed using the valid status transitions defined for the application.
+
+The allowed transitions are:
+```
+PENDING → PROCESSING
+PROCESSING → COMPLETED
+PROCESSING → FAILED
+```
 Other status changes are rejected.
 
+For example:
+```
+PENDING → COMPLETED
+```
+is not allowed because the transaction must first move to PROCESSING.
 
+Once a transaction reaches COMPLETED or FAILED, it should not be changed again because it has reached its final state.
 
-Reasoning: A new transaction starts in PENDING. It can move to PROCESSING when processing begins. From PROCESSING, it can either complete successfully or fail. Once a transaction is COMPLETED or FAILED, it should not change again because it has reached a final state.
+This keeps the transaction status flow simple and prevents invalid status changes.
+## 6. API Endpoints
 
+The application provides four main REST APIs.
 
-Also explain any business validation you add beyond the annotations already supplied.
+## 6.1 Create Transaction
+### POST /transactions
+Creates a new transaction after validating the request.
 
-## API skeleton
-
-### Create
-
-Creates a new transaction after validating the request. The transaction ID must be unique and the initial status is set to PENDING.
-
+The Transaction ID must be unique and the initial status is automatically set to PENDING.
 
 Example:
-
 ```
 curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T111\",\"customerId\":\"C201\",\"amount\":1000000.0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\"}"
 ```
+Example request data:
+```
+{
+  "transactionId": "T111",
+  "customerId": "C201",
+  "amount": 1000000.0,
+  "currency": "US",
+  "transactionType": "PAYMENT"
+}
+```
+The created transaction starts with:
+```
+PENDING
+```
+## 6.2 Get Transaction
 
-### Get
-
-Retrieves a transaction using its Transaction ID. If the transaction does not exist, the API returns a suitable not found response.
+## GET
+```
+/transactions/{transactionId}
+```
+Retrieves a transaction using its Transaction ID.
 
 Example:
-
 ```
 curl -X GET "http://localhost:8081/transactions/T111"
 ```
+If the transaction exists, its details are returned.
 
-### Update status
-
-
-Updates the status of an existing transaction. Only valid status transitions are allowed.
-
-Valid transitions:
-- PENDING → PROCESSING
-- PROCESSING → COMPLETED
-- PROCESSING → FAILED
-
+If the transaction does not exist, the API returns a suitable not found response.
 
 Example:
+```
+Transaction not found
+```
+## 6.3 Update Transaction Status
 
+## PATCH
+```
+/transactions/{transactionId}/status
+```
+Updates the status of an existing transaction.
+
+Only valid status transitions are allowed.
+
+Example:
 ```
 curl -X PATCH "http://localhost:8081/transactions/T111/status" -H "Content-Type: text/plain" -d "PROCESSING"
 ```
+Valid transitions:
+```
+PENDING → PROCESSING
+PROCESSING → COMPLETED
+PROCESSING → FAILED
+```
+An invalid status transition is rejected.
 
-### Get customer transactions
-
-Retrieves all transactions for a specific customer.
+For example:
+```
+PENDING → COMPLETED
+```
+is rejected because the transaction cannot directly move from PENDING to COMPLETED.
+## 6.4 Get Customer Transactions
+## GET
+```
+/transactions/customer/{customerId}
+```
+Retrieves all transactions belonging to a specific customer.
 
 Example:
-
-
 ```
 curl -X GET "http://localhost:8081/transactions/customer/C201"
-
 ```
+This returns all transactions associated with the given Customer ID.
+## 7. Error Handling
 
-## Testing
+The application handles different invalid situations and returns suitable error messages.
 
-The project includes 8 JUnit tests covering successful operations and important validation/error cases.
+## Duplicate Transaction ID
+
+If a transaction with the same Transaction ID already exists, the request is rejected.
+
+Example:
+```
+Transaction ID already exists
+```
+## Transaction Not Found
+
+If a requested transaction does not exist, the API returns:
+```
+Transaction not found
+```
+## Invalid Amount
+
+If the transaction amount is zero or negative, the request is rejected.
+
+Example:
+```
+Amount must be greater than zero
+```
+## Invalid Status Transition
+
+If an invalid status change is requested, the request is rejected with an appropriate error message.
+
+For example:
+```
+PENDING → COMPLETED
+```
+is not allowed.
+
+These validations help prevent invalid transaction data from being stored.
+## 8. Testing
+
+The project includes JUnit tests covering the main operations and important validation cases.
 
 The tests cover:
 
@@ -163,50 +282,182 @@ The tests cover:
 - Rejecting a duplicate transaction ID
 - Rejecting an invalid status transition
 
-All 8 tests pass successfully.
+The complete test suite was executed successfully.
 
+Test result:
+```
+Tests run: 8
+Failures: 0
+Errors: 0
+Skipped: 0
 
+BUILD SUCCESS
+```
+All 8 tests passed successfully.
+## 9. Manual API Testing
 
-### Manual API testing
+The REST APIs were also tested manually using curl commands.
 
-The error handling was also checked using curl requests.
+The following cases were checked:
 
-- Invalid amount (`0`) was rejected with "Amount must be greater than zero".
-- A duplicate transaction ID was rejected with "Transaction ID already exists".
-- An invalid status transition was rejected with the appropriate error message.
--  A request for a transaction that does not exist was rejected with "Transaction not found".
+- Creating a transaction successfully
+- Getting an existing transaction
+- Getting a transaction that does not exist
+- Updating transaction status
+- Getting all transactions for a customer
+- Rejecting an invalid amount
+- Rejecting a duplicate transaction ID
+- Rejecting an invalid status transition
 
-These checks confirmed that invalid requests are handled correctly.
+Some of the error cases tested were:
+## Invalid Amount
 
+An amount of 0 was rejected with:
+Example:
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T111\",\"customerId\":\"C201\",\"amount\":0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\",\"status\":\"PENDING\"}"
+```
+Output:
+```
+Amount must be greater than zero
+```
+## Duplicate Transaction ID
 
+A duplicate Transaction ID was rejected with:
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T111\",\"customerId\":\"C201\",\"amount\":1000000.0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\",\"status\":\"PENDING\"}"
+```
+Output:
+```
+Transaction ID already exists
+```
+## Invalid Status Transition
 
-## Documentation
+An invalid status transition was rejected with the appropriate error message.
+Example:
+```
+curl -X PATCH "http://localhost:8081/transactions/T201/status" -H "Content-Type: text/plain" -d "PENDING"
+```
+Output:
+```
+Invalid status transition from COMPLETED to PENDING
+```
+## Transaction Not Found
 
-### Understanding of the problem
+A request for a transaction that does not exist was rejected with:
+Example:
+```
+curl -X GET "http://localhost:8081/transactions/T111"
+```
+Output:
+```
+Transaction not found
+```
+## 10. Database
 
-This project is a simple transaction management API. It allows us to create a transaction, get a transaction using its ID, update its status, and get all transactions for a customer.
+The application uses the H2 embedded database.
 
-### Assumptions
+H2 is used because it is simple to configure and does not require a separate database installation.
+
+Spring Data JPA is used for database operations.
+
+The database is mainly used to store transaction information during application execution.
+## 11. Project Structure
+
+The project follows a simple Spring Boot project structure.
+```
+src/main/java
+│
+├── Controller
+│
+├── Service
+│
+├── Repository
+│
+├── Entity
+│
+└── TransactionStarterApplication
+```
+The main responsibilities are divided between the different layers:
+```
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Database
+```
+The controller handles HTTP requests, the service contains the business logic, and the repository handles database operations.
+## 12. How to Run the Project
+Windows
+
+To run the tests:
+```
+mvnw.cmd clean test
+```
+To start the application:
+```
+mvnw.cmd spring-boot:run
+```
+## Linux / macOS
+
+To run the tests:
+```
+./mvnw clean test
+```
+To start the application:
+```
+./mvnw spring-boot:run
+```
+The application runs on:
+```
+http://localhost:8081
+```
+The APIs can then be tested using curl or another REST API testing tool.
+
+## 13. Assumptions
+
+The following assumptions were made while implementing the project:
 
 - Transaction ID is unique.
+- Transaction ID cannot be empty.
+- Customer ID cannot be empty.
 - Amount must be greater than zero.
-- A newly created transaction starts with PENDING status.
-- Only the defined status transitions are allowed.
-- Customer ID is used to find all transactions belonging to a customer.
+- Currency is required.
+- Transaction type is required.
+- Every newly created transaction starts with PENDING.
+- Only valid status transitions are allowed.
+- COMPLETED and FAILED are final transaction states.
+- Customer ID is used to retrieve all transactions belonging to a customer.
+## 14. Known Limitations
 
-### Known limitations
+This implementation is mainly focused on the requirements of the engineering exercise and is not intended to be a complete production-ready transaction system.
 
-- The application uses simple error responses and does not have a separate global exception handler.
+Some limitations are:
+
+- The application uses the H2 embedded database.
 - Authentication and authorization are not implemented.
-- The current implementation is mainly focused on the requirements of this exercise and is not designed as a production-ready system.
+- The error handling is kept simple.
+- There is no separate global exception handler.
+- Production-level monitoring and auditing are not implemented.
+- The application is mainly focused on the requirements of this exercise.
+## 15. Improvements With More Time
 
-### Improvements with more time
+With more time, I would improve the application by:
 
-With more time, I would improve the error responses by adding a global exception handler. I would also add authentication and authorization and improve the database setup for production use.
+- Adding a global exception handler.
+- Improving the error response structure.
+- Adding more detailed validation.
+- Adding authentication and authorization.
+- Improving the database setup for production use.
+- Adding more test cases.
+- Adding logging and monitoring.
+- Adding API documentation using Swagger/OpenAPI.
+- Adding better handling for large numbers of customer transactions.
 
-
-
-## AI Assistance Disclosure
+These improvements would make the application more suitable for a production environment.
+## 16. AI Assistance Disclosure
 
 I used ChatGPT to understand the requirements, help with the Spring Boot implementation, troubleshoot errors, and understand how to write and run the tests.
 
@@ -216,18 +467,46 @@ During testing, I found some issues with the suggested testing approach and corr
 
 I checked the final result by running the JUnit tests in Eclipse and also testing the API using curl commands in the command prompt. The final test run showed 8 tests run, with 0 failures and 0 errors.
 
+## 17. Final Verification
 
-
-
-## Test Run Output
-
-The complete test suite was run using:
-
+The complete test suite was executed using:
+```
 mvnw.cmd clean test
-
-Result:
-
-Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+```
+The final result was:
+```
+Tests run: 8
+Failures: 0
+Errors: 0
+Skipped: 0
 
 BUILD SUCCESS
+```
+The four required operations were also verified:
+
+- Create transaction
+- Get transaction
+- Update transaction status
+- Get all transactions for a customer
+
+The important validation cases were also checked:
+
+- Invalid amount
+- Duplicate transaction ID
+- Invalid status transition
+- Transaction not found
+## 18. Conclusion
+
+This project implements a simple Customer Transaction Service using Java, Spring Boot, Spring Data JPA and H2.
+
+The application provides the required transaction operations and includes validation for important transaction fields and status changes.
+
+The implementation was tested using both JUnit tests and manual curl requests.
+
+All 8 automated tests passed successfully with:
+```
+Failures: 0
+Errors: 0
+```
+The project focuses on keeping the implementation simple, readable and aligned with the requirements of the engineering challenge.
 
