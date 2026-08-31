@@ -89,12 +89,23 @@ Transaction ID
 If a transaction with the same ID already exists, the request is rejected.
 
 Example error:
+
 ```
 Transaction ID already exists
 ```
 ## Customer ID
 - Customer ID is required.
 - Customer ID cannot be empty.
+Example Command:
+
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T114\",\"customerId\":\"\",\"amount\":1000,\"currency\":\"USD\",\"transactionType\":\"PAYMENT\"}"
+```
+Output:
+
+```
+Customer ID is required
+```
 
 ## Amount
 - Amount is required.
@@ -102,21 +113,44 @@ Transaction ID already exists
 - Zero and negative amounts are rejected.
 
 Example error:
+
 ```
 Amount must be greater than zero
 ```
 ## Currency
 - Currency is required.
 - Currency cannot be empty.
+Example:
+
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T116\",\"customerId\":\"C201\",\"amount\":1000,\"currency\":\"\",\"transactionType\":\"PAYMENT\"}"
+```
+Output:
+
+```
+Currency is required
+```
+
 ## Transaction Type
 - Transaction type is required.
 - Transaction type cannot be empty.
+Example:
+
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T117\",\"customerId\":\"C201\",\"amount\":1000,\"currency\":\"USD\",\"transactionType\":\"\"}"
+```
+Output:
+
+```
+Transaction type is required
+```
 
 ## Initial Transaction Status
 
 The client does not provide the initial status while creating a transaction.
 
 When a transaction is successfully created, its initial status is automatically set to:
+
 ```
 PENDING
 ```
@@ -127,6 +161,7 @@ This is handled by the application.
 The transaction status can only be changed using the valid status transitions defined for the application.
 
 The allowed transitions are:
+
 ```
 PENDING → PROCESSING
 PROCESSING → COMPLETED
@@ -135,6 +170,7 @@ PROCESSING → FAILED
 Other status changes are rejected.
 
 For example:
+
 ```
 PENDING → COMPLETED
 ```
@@ -154,10 +190,12 @@ Creates a new transaction after validating the request.
 The Transaction ID must be unique and the initial status is automatically set to PENDING.
 
 Example:
+
 ```
 curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T111\",\"customerId\":\"C201\",\"amount\":1000000.0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\"}"
 ```
 Example request data:
+
 ```
 {
   "transactionId": "T111",
@@ -168,18 +206,18 @@ Example request data:
 }
 ```
 The created transaction starts with:
+
 ```
 PENDING
 ```
 ## 6.2 Get Transaction
 
-## GET
-```
-/transactions/{transactionId}
-```
+## GET/transactions/{transactionId}
+
 Retrieves a transaction using its Transaction ID.
 
 Example:
+
 ```
 curl -X GET "http://localhost:8081/transactions/T111"
 ```
@@ -188,24 +226,25 @@ If the transaction exists, its details are returned.
 If the transaction does not exist, the API returns a suitable not found response.
 
 Example:
+
 ```
 Transaction not found
 ```
 ## 6.3 Update Transaction Status
 
-## PATCH
-```
-/transactions/{transactionId}/status
-```
+## PATCH/transactions/{transactionId}/status
+
 Updates the status of an existing transaction.
 
 Only valid status transitions are allowed.
 
 Example:
+
 ```
 curl -X PATCH "http://localhost:8081/transactions/T111/status" -H "Content-Type: text/plain" -d "PROCESSING"
 ```
 Valid transitions:
+
 ```
 PENDING → PROCESSING
 PROCESSING → COMPLETED
@@ -214,18 +253,18 @@ PROCESSING → FAILED
 An invalid status transition is rejected.
 
 For example:
+
 ```
 PENDING → COMPLETED
 ```
 is rejected because the transaction cannot directly move from PENDING to COMPLETED.
 ## 6.4 Get Customer Transactions
-## GET
-```
-/transactions/customer/{customerId}
-```
+## GET/transactions/customer/{customerId}
+
 Retrieves all transactions belonging to a specific customer.
 
 Example:
+
 ```
 curl -X GET "http://localhost:8081/transactions/customer/C201"
 ```
@@ -239,12 +278,17 @@ The application handles different invalid situations and returns suitable error 
 If a transaction with the same Transaction ID already exists, the request is rejected.
 
 Example:
+
 ```
 Transaction ID already exists
 ```
 ## Transaction Not Found
 
 If a requested transaction does not exist, the API returns:
+
+
+Example:
+
 ```
 Transaction not found
 ```
@@ -252,7 +296,8 @@ Transaction not found
 
 If the transaction amount is zero or negative, the request is rejected.
 
-Example:
+Example 
+
 ```
 Amount must be greater than zero
 ```
@@ -260,7 +305,10 @@ Amount must be greater than zero
 
 If an invalid status change is requested, the request is rejected with an appropriate error message.
 
-For example:
+For example, a transaction in PROCESSING status cannot be changed directly to PENDING.
+
+Example:
+
 ```
 PENDING → COMPLETED
 ```
@@ -285,6 +333,7 @@ The tests cover:
 The complete test suite was executed successfully.
 
 Test result:
+
 ```
 Tests run: 8
 Failures: 0
@@ -309,50 +358,98 @@ The following cases were checked:
 - Rejecting a duplicate transaction ID
 - Rejecting an invalid status transition
 
-Some of the error cases tested were:
-## Invalid Amount
-
-An amount of 0 was rejected with:
-Example:
+## Create Transaction
+  
 ```
-curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T111\",\"customerId\":\"C201\",\"amount\":0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\",\"status\":\"PENDING\"}"
+ curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T111\",\"customerId\":\"C201\",\"amount\":1000000.0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\"}"
+ ```
+ Output:
+ 
+ ```
+{"transactionId":"T111","customerId":"C201","amount":1000000.0,"currency":"US","transactionType":"PAYMENT","status":"PENDING"}
+ ```
+ The transaction was created successfully with PENDING status.
+ 
+## Get Transaction
+
+```
+curl -X GET "http://localhost:8081/transactions/T111"
 ```
 Output:
+
+```
+{"transactionId":"T111","customerId":"C201","amount":1000000.0,"currency":"US","transactionType":"PAYMENT","status":"PENDING"}
+```
+## Get Transaction That Does Not Exist
+
+```
+curl -X GET "http://localhost:8081/transactions/T112"
+```
+Output:
+
+```
+Transaction not found
+```
+## Update Transaction Status
+
+```
+curl -X PATCH "http://localhost:8081/transactions/T111/status" -H "Content-Type: text/plain" -d "PROCESSING"
+```
+Output:
+
+```
+{"transactionId":"T111","customerId":"C201","amount":1000000.0,"currency":"US","transactionType":"PAYMENT","status":"PROCESSING"}
+```
+
+## Get Customer Transactions
+
+```
+curl -X GET "http://localhost:8081/transactions/customer/C201"
+```
+Output:
+
+```
+[{"transactionId":"T111","customerId":"C201","amount":1000000.0,"currency":"US","transactionType":"PAYMENT","status":"PROCESSING"}]
+```
+## Invalid Amount
+
+An amount of 0 was rejected.
+
+```
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T113\",\"customerId\":\"C201\",\"amount\":0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\"}"
+```
+Output:
+
 ```
 Amount must be greater than zero
 ```
 ## Duplicate Transaction ID
 
-A duplicate Transaction ID was rejected with:
+A duplicate Transaction ID was rejected.
+
 ```
-curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T111\",\"customerId\":\"C201\",\"amount\":1000000.0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\",\"status\":\"PENDING\"}"
+curl -X POST "http://localhost:8081/transactions" -H "Content-Type: application/json" -d "{\"transactionId\":\"T111\",\"customerId\":\"C201\",\"amount\":1000000.0,\"currency\":\"US\",\"transactionType\":\"PAYMENT\"}"
 ```
 Output:
+
 ```
 Transaction ID already exists
 ```
 ## Invalid Status Transition
 
-An invalid status transition was rejected with the appropriate error message.
-Example:
+An invalid status transition was rejected.
+
+For example, trying to change a completed transaction back to pending
+
 ```
 curl -X PATCH "http://localhost:8081/transactions/T201/status" -H "Content-Type: text/plain" -d "PENDING"
 ```
 Output:
+
 ```
 Invalid status transition from COMPLETED to PENDING
 ```
-## Transaction Not Found
 
-A request for a transaction that does not exist was rejected with:
-Example:
-```
-curl -X GET "http://localhost:8081/transactions/T111"
-```
-Output:
-```
-Transaction not found
-```
 ## 10. Database
 
 The application uses the H2 embedded database.
@@ -365,6 +462,7 @@ The database is mainly used to store transaction information during application 
 ## 11. Project Structure
 
 The project follows a simple Spring Boot project structure.
+
 ```
 src/main/java
 │
@@ -379,6 +477,7 @@ src/main/java
 └── TransactionStarterApplication
 ```
 The main responsibilities are divided between the different layers:
+
 ```
 Controller
     ↓
@@ -393,24 +492,29 @@ The controller handles HTTP requests, the service contains the business logic, a
 Windows
 
 To run the tests:
+
 ```
 mvnw.cmd clean test
 ```
 To start the application:
+
 ```
 mvnw.cmd spring-boot:run
 ```
 ## Linux / macOS
 
 To run the tests:
+
 ```
 ./mvnw clean test
 ```
 To start the application:
+
 ```
 ./mvnw spring-boot:run
 ```
 The application runs on:
+
 ```
 http://localhost:8081
 ```
@@ -430,6 +534,7 @@ The following assumptions were made while implementing the project:
 - Only valid status transitions are allowed.
 - COMPLETED and FAILED are final transaction states.
 - Customer ID is used to retrieve all transactions belonging to a customer.
+
 ## 14. Known Limitations
 
 This implementation is mainly focused on the requirements of the engineering exercise and is not intended to be a complete production-ready transaction system.
@@ -442,6 +547,7 @@ Some limitations are:
 - There is no separate global exception handler.
 - Production-level monitoring and auditing are not implemented.
 - The application is mainly focused on the requirements of this exercise.
+
 ## 15. Improvements With More Time
 
 With more time, I would improve the application by:
@@ -457,23 +563,28 @@ With more time, I would improve the application by:
 - Adding better handling for large numbers of customer transactions.
 
 These improvements would make the application more suitable for a production environment.
+
 ## 16. AI Assistance Disclosure
 
-I used ChatGPT to understand the requirements, help with the Spring Boot implementation, troubleshoot errors, and understand how to write and run the tests.
+I used ChatGPT to understand the requirements, get help with the Spring Boot implementation, troubleshoot errors, and understand how to write and run the tests.
 
-ChatGPT suggested code and testing approaches for the transaction service and controller. I reviewed the suggestions and made the changes needed to fit the starter project and the given requirements.
+ChatGPT suggested code and testing approaches for the transaction service and controller. I reviewed the suggestions and changed them where needed to match the starter project and the given requirements.
 
-During testing, I found some issues with the suggested testing approach and corrected them based on the actual project setup and requirements. I also verified the status transitions, validation, duplicate transaction ID handling, and other required operations.
+During testing, I found that some suggested testing steps did not match my actual project setup, so I corrected them based on the project structure and requirements. I also checked and corrected the validation rules, status transitions, duplicate transaction ID handling, and other required operations.
 
-I checked the final result by running the JUnit tests in Eclipse and also testing the API using curl commands in the command prompt. The final test run showed 8 tests run, with 0 failures and 0 errors.
+I did not blindly use the suggested code. I checked the application behavior and modified the implementation when the suggested approach did not work correctly with my project.
+
+I checked the final result by running the JUnit tests in Eclipse and manually testing the API using curl commands in the command prompt. The final test run showed 8 tests run, with 0 failures and 0 errors. I also verified the main success and error cases manually using the API.
 
 ## 17. Final Verification
 
 The complete test suite was executed using:
+
 ```
 mvnw.cmd clean test
 ```
 The final result was:
+
 ```
 Tests run: 8
 Failures: 0
@@ -495,6 +606,7 @@ The important validation cases were also checked:
 - Duplicate transaction ID
 - Invalid status transition
 - Transaction not found
+
 ## 18. Conclusion
 
 This project implements a simple Customer Transaction Service using Java, Spring Boot, Spring Data JPA and H2.
@@ -504,9 +616,9 @@ The application provides the required transaction operations and includes valida
 The implementation was tested using both JUnit tests and manual curl requests.
 
 All 8 automated tests passed successfully with:
+
 ```
 Failures: 0
 Errors: 0
 ```
 The project focuses on keeping the implementation simple, readable and aligned with the requirements of the engineering challenge.
-
